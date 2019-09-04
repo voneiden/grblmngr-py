@@ -1,0 +1,1 @@
+gcc -shared -Wl,-soname,gcparser -o gcode/gcparser.so -fPIC gcode/gcparser.c

@@ -105,3 +105,5 @@ venv.bak/
 /grblmngr-py.iml
 
 .idea
+cmake-build-debug
+*.so

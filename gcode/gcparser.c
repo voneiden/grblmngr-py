@@ -47,7 +47,7 @@ typedef struct sProgram {
     t_segment *segments;
 } t_program;
 
-t_program program = {NULL};
+t_program program = {0};
 
 /*
 t_segment * free_block(t_segment * block, char free_state_before) {
@@ -101,50 +101,100 @@ void free_program() {
 }
 
 
+#define MAX_LINE_LENGTH 256
+long parse_long(char ** bytes_pointer, long * counter, long * result) {
+    char * bytes = *bytes_pointer;
+    char * bytes_end = NULL;
+    *result = strtol(bytes, &bytes_end, 10);
+    // TODO check for error
+    long length = bytes_end - bytes;
+    *counter += length;
+    bytes += length;
+    return 0;
 
-void parse_block(char * bytes) {
-    // Maybe goto sucks here..
+}
+long parse_double(char ** bytes_pointer, long * counter, double * result) {
+    char * bytes = *bytes_pointer;
+    char * bytes_end = NULL;
+    *result = strtod(bytes, &bytes_end);
+    // TODO check for error
+    long length = &bytes_end - &bytes;
+    *counter += length;
+    bytes += length;
+    return 0;
+}
+
+#define CHECK_ERROR \
+    if (error) { \
+        return 1; \
+    } \
+    state_changed = 1;
+
+long parse_block(char ** bytes_pointer) { //t_program_state state
+    long state_changed = 0;
+    char * bytes = *bytes_pointer;
     char byte;
-    char n_buffer = 0;
-    char buffer[256];
+    long error;
+    long l_value;
+    double d_value;
 
-    read_next_word:
-    byte = *bytes;
-    bytes++;
-    switch (byte) {
-        case '\r':
-        case '\n':
-        case '\0':
-            goto done;
-        case 'G':
-        case 'g':
-            goto read_general_function;
-        default:
-            goto read_next_word;
+    for (long i=0; i < MAX_LINE_LENGTH; i++) {
+        byte = *bytes++;
+        switch (byte) {
+            case '\r':
+            case '\n':
+            case '\0':
+                return 0;
+            case 'G':
+            case 'g':
+                // TODO doesn't seem to update!
+                error = parse_long(&bytes, &i, &l_value);
+                CHECK_ERROR
+                break;
+            case 'X':
+            case 'x':
+                error = parse_double(&bytes, &i, &d_value);
+                CHECK_ERROR
+                break;
+            case 'Y':
+            case 'y':
+                error = parse_double(&bytes, &i, &d_value);
+                CHECK_ERROR
+                break;
+            case 'Z':
+            case 'z':
+                error = parse_double(&bytes, &i, &d_value);
+                CHECK_ERROR
+                break;
+            case 'F':
+                error = parse_double(&bytes, &i, &d_value);
+                CHECK_ERROR
+                break;
+
+            default:
+                break;
+        }
     }
 
-    read_general_function:
     //bytes++;
-    byte = *bytes++;
-    if (byte == '.') {
-
-    }
-
-    if (byte == '.' || isdigit(byte)) {
-        buffer[n_buffer] = byte;
-        n_buffer++;
-    } else {
-        buffer[n_buffer] = '\0';
-        n_buffer = 0;
-    }
-    done:
-    return;
+    return 1;
 }
 
 int load(char * bytes) {
     free_program();
-
+    long error;
+    // TODO this pointer is not udpating
+    // TODO this pointer will also overshoot so the equality chec kis not OK
+    while (*bytes != '\0') {
+        error = parse_block(&bytes);
+    }
 
     return 1;
 }
 
+
+int main() {
+    load("G10");
+    return 1;
+
+}

@@ -109,7 +109,7 @@ long parse_long(char ** bytes_pointer, long * counter, long * result) {
     // TODO check for error
     long length = bytes_end - bytes;
     *counter += length;
-    bytes += length;
+    *bytes_pointer += length;
     return 0;
 
 }
@@ -118,9 +118,9 @@ long parse_double(char ** bytes_pointer, long * counter, double * result) {
     char * bytes_end = NULL;
     *result = strtod(bytes, &bytes_end);
     // TODO check for error
-    long length = &bytes_end - &bytes;
+    long length = bytes_end - bytes;
     *counter += length;
-    bytes += length;
+    *bytes_pointer += length;
     return 0;
 }
 
@@ -139,35 +139,36 @@ long parse_block(char ** bytes_pointer) { //t_program_state state
     double d_value;
 
     for (long i=0; i < MAX_LINE_LENGTH; i++) {
-        byte = *bytes++;
+        byte = *bytes;
+        ++*bytes_pointer;
         switch (byte) {
+            case '\0':
             case '\r':
             case '\n':
-            case '\0':
+                --*bytes_pointer;
                 return 0;
             case 'G':
             case 'g':
-                // TODO doesn't seem to update!
-                error = parse_long(&bytes, &i, &l_value);
+                error = parse_long(bytes_pointer, &i, &l_value);
                 CHECK_ERROR
                 break;
             case 'X':
             case 'x':
-                error = parse_double(&bytes, &i, &d_value);
+                error = parse_double(bytes_pointer, &i, &d_value);
                 CHECK_ERROR
                 break;
             case 'Y':
             case 'y':
-                error = parse_double(&bytes, &i, &d_value);
+                error = parse_double(bytes_pointer, &i, &d_value);
                 CHECK_ERROR
                 break;
             case 'Z':
             case 'z':
-                error = parse_double(&bytes, &i, &d_value);
+                error = parse_double(bytes_pointer, &i, &d_value);
                 CHECK_ERROR
                 break;
             case 'F':
-                error = parse_double(&bytes, &i, &d_value);
+                error = parse_double(bytes_pointer, &i, &d_value);
                 CHECK_ERROR
                 break;
 
@@ -183,8 +184,6 @@ long parse_block(char ** bytes_pointer) { //t_program_state state
 int load(char * bytes) {
     free_program();
     long error;
-    // TODO this pointer is not udpating
-    // TODO this pointer will also overshoot so the equality chec kis not OK
     while (*bytes != '\0') {
         error = parse_block(&bytes);
     }
